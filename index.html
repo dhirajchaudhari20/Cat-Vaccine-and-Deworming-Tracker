@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Vaccine and Deworming Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .reminder {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 18px;
+            color: #FF0000;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Cat Vaccine & Deworming Tracker</h1>
+
+        <label for="vaccine-date">Last Vaccine Date:</label>
+        <input type="date" id="vaccine-date">
+
+        <label for="deworm-date">Last Deworming Date:</label>
+        <input type="date" id="deworm-date">
+
+        <button onclick="saveData()">Save Data</button>
+        <button onclick="resetData()">Reset Data</button>
+
+        <div class="reminder" id="reminder"></div>
+    </div>
+
+    <footer>
+        <p>Made by Dhiraj</p>
+    </footer>
+
+    <script>
+        // Function to add months to a date
+        function addMonths(date, months) {
+            const d = new Date(date);
+            d.setMonth(d.getMonth() + months);
+            return d;
+        }
+
+        // Function to calculate the difference in days between two dates
+        function daysBetween(today, targetDate) {
+            const timeDiff = targetDate - today;
+            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            return daysDiff;
+        }
+
+        // Function to save data in local storage and alert the user
+        function saveData() {
+            const vaccineDate = document.getElementById('vaccine-date').value;
+            const dewormDate = document.getElementById('deworm-date').value;
+
+            if (!vaccineDate || !dewormDate) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Dates',
+                    text: 'Please enter both the vaccine and deworming dates.',
+                });
+                return;
+            }
+
+            // Save dates to localStorage
+            localStorage.setItem('vaccineDate', vaccineDate);
+            localStorage.setItem('dewormDate', dewormDate);
+
+            // Calculate the next vaccine and deworming dates
+            const nextVaccineDate = addMonths(vaccineDate, 6);
+            const nextDewormDate = addMonths(dewormDate, 3);
+
+            // Display SweetAlert for confirmation
+            Swal.fire({
+                icon: 'success',
+                title: 'Data Saved!',
+                text: `Next Vaccine: ${nextVaccineDate.toDateString()} \nNext Deworming: ${nextDewormDate.toDateString()}`,
+            });
+
+            displayReminders();
+        }
+
+        // Function to display reminders for upcoming vaccines and deworming
+        function displayReminders() {
+            const vaccineDate = localStorage.getItem('vaccineDate');
+            const dewormDate = localStorage.getItem('dewormDate');
+            const reminderDiv = document.getElementById('reminder');
+
+            if (!vaccineDate || !dewormDate) return;
+
+            const today = new Date();
+            const nextVaccineDate = addMonths(vaccineDate, 6);
+            const nextDewormDate = addMonths(dewormDate, 3);
+
+            const vaccineDaysLeft = daysBetween(today, new Date(nextVaccineDate));
+            const dewormDaysLeft = daysBetween(today, new Date(nextDewormDate));
+
+            reminderDiv.innerHTML = `
+                <p>Next Vaccine in <strong>${vaccineDaysLeft} days</strong> (${nextVaccineDate.toDateString()}).</p>
+                <p>Next Deworming in <strong>${dewormDaysLeft} days</strong> (${nextDewormDate.toDateString()}).</p>
+            `;
+
+            // Alert user if the dates are near (within 7 days)
+            if (vaccineDaysLeft <= 7) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Vaccine Reminder',
+                    text: `The next vaccine is due in ${vaccineDaysLeft} days!`,
+                });
+            }
+
+            if (dewormDaysLeft <= 7) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Deworming Reminder',
+                    text: `The next deworming is due in ${dewormDaysLeft} days!`,
+                });
+            }
+        }
+
+        // Function to reset data in local storage and clear inputs
+        function resetData() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This will reset all the saved data!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, reset it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('vaccineDate');
+                    localStorage.removeItem('dewormDate');
+
+                    document.getElementById('vaccine-date').value = '';
+                    document.getElementById('deworm-date').value = '';
+
+                    displayReminders();
+
+                    Swal.fire(
+                        'Reset!',
+                        'The data has been reset.',
+                        'success'
+                    );
+                }
+            });
+        }
+
+        // Load data from localStorage when page is loaded and show reminders
+        window.onload = function() {
+            const vaccineDate = localStorage.getItem('vaccineDate');
+            const dewormDate = localStorage.getItem('dewormDate');
+
+            if (vaccineDate) {
+                document.getElementById('vaccine-date').value = vaccineDate;
+            }
+
+            if (dewormDate) {
+                document.getElementById('deworm-date').value = dewormDate;
+            }
+
+            displayReminders();
+        };
+    </script>
+
+</body>
+</html>
